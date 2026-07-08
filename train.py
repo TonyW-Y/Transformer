@@ -19,6 +19,7 @@ from tokenizers import Tokenizer, Regex
 from tokenizers.models import WordLevel
 from tokenizers.trainers import WordLevelTrainer
 from tokenizers.pre_tokenizers import Whitespace, Split
+from tokenizers.decoders import Fuse
 
 import torchmetrics
 from torch.utils.tensorboard import SummaryWriter
@@ -135,6 +136,10 @@ def get_or_build_tokenizer(config, ds, lang):
             # entire punctuation-delimited clauses as a single (mostly unique) token,
             # starving the vocab of anything learnable. Split per-character instead.
             tokenizer.pre_tokenizer = Split(Regex(r"\S"), behavior="isolated")
+            # Default decoder joins tokens with spaces (correct for word-level),
+            # which would insert a space between every Chinese character. Fuse
+            # concatenates tokens directly with no separator instead.
+            tokenizer.decoder = Fuse()
         else:
             tokenizer.pre_tokenizer = Whitespace()
         trainer = WordLevelTrainer(special_tokens=["[UNK]", "[PAD]", "[SOS]", "[EOS]"], min_frequency=2)
